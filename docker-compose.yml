@@ -1,0 +1,34 @@
+version: '3'
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: tenant_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_PASSWORD: 'tenant'
+      POSTGRES_USER: 'tenant'
+      POSTGRES_DB: 'tenants'
+    ports:
+      - '5433:5432'
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    command: gunicorn app:"app" -w 2 --threads 2 -b 0.0.0.0:3100
+    environment:
+      APP_SETTINGS: apps.config.ProductionConfig
+      DATABASE: 'postgres'
+      pg_host: 'db'
+      pg_user: 'tenant'
+      pg_pwd: 'tenant'
+      pg_db: 'tenants'
+    depends_on:
+      - db
+    ports:
+      - '3100:3100'
+
+volumes:
+  postgres_data:
